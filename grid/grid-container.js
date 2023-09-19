@@ -46,15 +46,13 @@ class GridContainer extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    console.log(`Attribute ${name} changed!`);
   }
 
   static get observedAttributes() {
-    return ['some-attribute'];
+    return [];
   }
 
   adoptedCallback() {
-    console.log('Adopted!');
   }
 
   #handleSlotChange = (e) => {
@@ -109,9 +107,6 @@ class GridContainer extends HTMLElement {
 
   #onCellDblClick = (e) => {
     const col = e.detail.col;
-
-    console.log(this.#cols[col]);
-    console.log(this.#colInitWidths[col]);
 
     const column = this.#cols[col];
     column.forEach(colCell => {
