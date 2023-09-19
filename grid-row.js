@@ -2,7 +2,12 @@ const template = document.createElement('template');
 template.innerHTML = /* html */`
 <style>
 :host {
-  display: block;
+  display: flex;
+  align-items: center;
+  background: var(--grid-row-background, #fff);
+}
+:host(:nth-of-type(2n)) {
+  background: var(--grid-row-background-even, #f9f9f9);
 }
 </style>
 <slot></slot>
@@ -14,6 +19,18 @@ class GridRow extends HTMLElement {
 
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
+  }
+
+  connectedCallback() {
+    this.addEventListener('grid-head-check', this.#gridHeadCheck);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('grid-head-check', this.#gridHeadCheck);
+  }
+
+  #gridHeadCheck(e) {
+    e.detail.check(false);
   }
 };
 
