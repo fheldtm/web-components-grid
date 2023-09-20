@@ -1,3 +1,5 @@
+import { GridCellProperty } from "./grid";
+
 const gridCellTemplate = document.createElement('template');
 gridCellTemplate.innerHTML = /* html */`
 <style>
@@ -6,10 +8,12 @@ gridCellTemplate.innerHTML = /* html */`
   display: flex;
   justify-content: var(--grid-cell-justify-content, flex-start);
   align-items: center;
-  min-width: 50px;
+  min-width: var(--grid-cell-min-width, 50px);
+  min-height: var(--grid-cell-min-height, 30px);
   margin: 0;
   padding: var(--grid-cell-padding, 5px 10px);
   box-sizing: border-box;
+  cursor: var(--grid-cell-cursor);
 }
 :host div {
   overflow: hidden;
@@ -35,23 +39,36 @@ gridCellTemplate.innerHTML = /* html */`
   transform: translateY(-50%);
   right: 0px;
   display: block;
-  width: 1px;
-  height: 100%;
-  background: var(--grid-cell-border-color, #eee);
+  width: var(--grid-cell-divider-width, 1px);
+  height: var(--grid-cell-divider-height, 100%);
+  background: var(--grid-cell-divider-color, #eee);
+}
+:host(.grid-cell__content) {
+  display: inline-block;
 }
 </style>
-<div>
+<div class="grid-cell__content">
   <slot></slot>
 </div>
 `;
 
 class GridCell extends HTMLElement {
-  #handle: HTMLElement | null = null;
-  #isResizeActive: boolean = false;
-  #startX: number = 0;
-  #startWidth: number = 0;
-  #resizeEvent: CustomEvent | null = null;
-  #col: number = 0;
+  grid: GridCellProperty = {
+    handle: null,
+    isResizeActive: false,
+    startX: 0,
+    startWidth: 0,
+    resizeEvent: null,
+    col: 0,
+    getColPosition: () => {},
+    resizeCell: () => new CustomEvent('grid-cell-resize'),
+    setDraggable: () => new CustomEvent('grid-cell-draggable'),
+    handleMouseDown: () => {},
+    handleMouseMove: () => {},
+    handleMouseUp: () => {},
+    gridCellClick: () => {},
+    gridColumnHeadClick: () => {}
+  };
 
   constructor() {
     super();
@@ -59,7 +76,89 @@ class GridCell extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     (this.shadowRoot as ShadowRoot).appendChild(gridCellTemplate.content.cloneNode(true));
 
-    this.#col = -1;
+    const cellClickEvent = new CustomEvent('grid-cell-click', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        cell: this
+      }
+    });
+
+    const columnHeadClickEvent = new CustomEvent('grid-column-head-click', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        cell: this
+      }
+    });
+
+    this.grid = {
+      handle: null,
+      isResizeActive: false,
+      startX: 0,
+      startWidth: 0,
+      resizeEvent: null,
+      col: 0,
+      getColPosition: () => {
+        const parent = this.parentNode;
+        if (parent) {
+          const siblings = Array.from(parent.querySelectorAll('grid-cell'));
+          const position = siblings.indexOf(this);
+          this.grid.col = position;
+        }
+      },
+      resizeCell: (width: number, resize: boolean = false) => {
+        this.grid.resizeEvent = null; // 메모리 누수 방지
+        this.grid.resizeEvent = new CustomEvent('grid-cell-resize', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            col: this.grid.col,
+            width: width,
+            cell: this,
+            resize: resize
+          }
+        });
+        return this.grid.resizeEvent;
+      },
+      setDraggable: (draggable: boolean) => {
+        return new CustomEvent('grid-cell-draggable', {
+          bubbles: true,
+          composed: true,
+          detail: { draggable }
+        });
+      },
+      handleMouseDown: async (e: MouseEvent) => {
+        this.grid.isResizeActive = true;
+        this.grid.startX = e.clientX;
+        this.grid.startWidth = this.clientWidth;
+
+        this.dispatchEvent(this.grid.setDraggable(false));
+
+        window.addEventListener('mousemove', this.grid.handleMouseMove);
+        window.addEventListener('mouseup', this.grid.handleMouseUp);
+      },
+      handleMouseMove: (e: MouseEvent) => {
+        if (!this.grid.isResizeActive) return;
+
+        const moved = e.clientX - this.grid.startX;
+        const width = this.grid.startWidth + moved;
+        this.style.width = `${width}`;
+
+        this.dispatchEvent(this.grid.resizeCell(width));
+      },
+      handleMouseUp: (e: MouseEvent) => {
+        this.grid.isResizeActive = false;
+
+        this.dispatchEvent(this.grid.setDraggable(true));
+      },
+      gridCellClick: (e: MouseEvent) => {
+        this.dispatchEvent(cellClickEvent);
+      },
+      gridColumnHeadClick: (e: MouseEvent) => {
+        this.dispatchEvent(columnHeadClickEvent);
+      }
+    }
   }
 
   async connectedCallback() {
@@ -69,100 +168,35 @@ class GridCell extends HTMLElement {
         bubbles: true,
         composed: true,
         detail: {
-          check: resolve,
-        },
+          check: resolve
+        }
       });
       this.dispatchEvent(checkHeadCellEvent);
     }).then((isHead) => {
       // if this is a head cell, add the handle
       if (isHead) {
-        this.#handle = document.createElement('span');
-        this.#handle.setAttribute('data-cell-handle', '');
-        (this.shadowRoot as ShadowRoot).appendChild(this.#handle);
+        this.grid.handle = document.createElement('span');
+        this.grid.handle.setAttribute('data-cell-handle', '');
+        (this.shadowRoot as ShadowRoot).appendChild(this.grid.handle);
 
         // add handle event listeners
-        this.#handle.addEventListener('mousedown', this.#handleMouseDown);
-        this.#handle.addEventListener('dblclick', this.#handleDblClick);
+        this.grid.handle.addEventListener('mousedown', this.grid.handleMouseDown);
+        this.addEventListener('click', this.grid.gridColumnHeadClick);
+      } else {
+        this.addEventListener('click', this.grid.gridCellClick);
       }
     });
 
     // set the initial width
     const width = this.clientWidth + 1;
-    this.#getColPosition();
-    this.dispatchEvent(this.#resizeCell(width));
+    this.grid.getColPosition();
+    this.dispatchEvent(this.grid.resizeCell(width, true));
   }
 
-  #getColPosition() {
-    const parent = this.parentNode;
-    if (parent) {
-      const siblings = Array.from(parent.querySelectorAll('grid-cell'));
-      const position = siblings.indexOf(this);
-      this.#col = position;
-    }
+  disconnectedCallback() {
+    this.removeEventListener('click', this.grid.gridColumnHeadClick);
+    this.removeEventListener('click', this.grid.gridCellClick);
   }
-
-  #resizeCell(width: number) {
-    this.#resizeEvent = null; // 메모리 누수 방지
-    this.#resizeEvent = new CustomEvent('grid-cell-resize', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        col: this.#col,
-        width: width,
-        cell: this
-      }
-    });
-    return this.#resizeEvent;
-  }
-
-  #setDraggable(draggable: boolean) {
-    return new CustomEvent('grid-cell-draggable', {
-      bubbles: true,
-      composed: true,
-      detail: { draggable }
-    });
-  }
-
-  #handleMouseDown = async (e: MouseEvent) => {
-    this.#isResizeActive = true;
-    this.#startX = e.clientX;
-    this.#startWidth = this.clientWidth;
-
-    this.dispatchEvent(this.#setDraggable(false));
-
-    window.addEventListener('mousemove', this.#handleMouseMove);
-    window.addEventListener('mouseup', this.#handleMouseUp);
-  }
-
-  #handleMouseMove = (e: MouseEvent) => {
-    if (!this.#isResizeActive) return;
-
-    const moved = e.clientX - this.#startX;
-    const width = this.#startWidth + moved;
-    this.style.width = `${width}`;
-
-    this.dispatchEvent(this.#resizeCell(width));
-  }
-
-  #handleMouseUp = (e: MouseEvent) => {
-    this.#isResizeActive = false;
-
-    this.dispatchEvent(this.#setDraggable(true));
-  }
-
-  #dblClick = (e: MouseEvent) => {
-    return new CustomEvent('grid-cell-dblclick', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        col: this.#col,
-      }
-    })
-  }
-
-  #handleDblClick = (e: MouseEvent) => {
-    this.dispatchEvent(this.#dblClick(e));
-  }
-};
+}
 
 customElements.define('grid-cell', GridCell);

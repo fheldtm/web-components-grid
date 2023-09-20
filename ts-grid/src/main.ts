@@ -1,5 +1,6 @@
 import './style.css'
 import './assets/grid';
+import { GridElement } from './assets/grid/grid';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="box">
@@ -27,3 +28,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
 </div>
 `
+
+setTimeout(() => {
+  const container = document.querySelector('grid-container') as GridElement;
+  container.on = {
+    'grid-row-click': (e: CustomEvent) => {
+      // console.log('ROW');
+      // console.log(e);
+    },
+    'grid-cell-click': (e: CustomEvent) => {
+      // console.log('CELL');
+      // console.log(e);
+    },
+    'grid-column-head-click': (e: CustomEvent) => {
+      // console.log('HEAD');
+      // console.log(e);
+    }
+  }
+  const newRow = document.createElement('grid-row');
+  newRow.innerHTML = `
+    <grid-cell>BODY9</grid-cell>
+    <grid-cell>BODY10</grid-cell>
+    <grid-cell>BODY11LONGTEXTTESTTESTTEST</grid-cell>
+    <grid-cell>BODY12</grid-cell>
+  `;
+  container.appendChild(newRow);
+}, 1000);
