@@ -1,4 +1,4 @@
-import { GridRowProperty } from "./grid";
+import type { GridRowProperty } from './grid';
 
 const gridRowTemplate = document.createElement('template');
 gridRowTemplate.innerHTML = /* html */`
@@ -14,6 +14,7 @@ gridRowTemplate.innerHTML = /* html */`
   --grid-cell-divider-color: var(--grid-row-cell-divider-color);
   --grid-cell-padding: var(--grid-row-cell-padding);
   --grid-cell-justify-content: var(--grid-row-cell-justify-content);
+  --grid-cell-font-weight: var(--grid-row-font-weight);
 }
 :host(:not(:last-of-type)) {
   border-bottom: var(--grid-row-border-bottom, none);
@@ -32,7 +33,7 @@ class GridRow extends HTMLElement {
   grid: GridRowProperty = {
     gridHeadCheck: () => {},
     gridRowClick: () => {}
-  }
+  };
 
   constructor() {
     super();
@@ -55,7 +56,7 @@ class GridRow extends HTMLElement {
       gridRowClick: (e: MouseEvent) => {
         this.dispatchEvent(rowClickEvent);
       }
-    }
+    };
   }
 
   connectedCallback() {

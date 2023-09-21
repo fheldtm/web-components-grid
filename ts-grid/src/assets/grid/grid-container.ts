@@ -1,4 +1,4 @@
-import { GridContainerProperty, GridEventType } from './grid';
+import type { GridContainerProperty, GridEventType } from './grid';
 
 const gridContainerTemplate = document.createElement('template');
 gridContainerTemplate.innerHTML = /* html */`
@@ -77,9 +77,12 @@ class GridContainer extends HTMLElement {
           const widthRatio = this.grid.colWidths.map(width => width / maxColWidth);
 
           const maintainWidth = this.clientWidth - this.grid.colWidths.reduce((a, b) => a + b, 0);
-          this.grid.colWidths = this.grid.colWidths.map((width, i) => width + Math.floor(maintainWidth * widthRatio[i]));
+          let lastMargin = 0;
+          if (maintainWidth > 0) {
+            this.grid.colWidths = this.grid.colWidths.map((width, i) => width + Math.floor(maintainWidth * widthRatio[i]));
 
-          const lastMargin = this.clientWidth - this.grid.colWidths.reduce((a, b) => a + b, 0);
+            lastMargin = this.clientWidth - this.grid.colWidths.reduce((a, b) => a + b, 0);
+          }
 
           this.grid.cols.forEach((col, index) => {
             const width = this.grid.colWidths[index] + (index === this.grid.colWidths.length - 1 ? lastMargin : 0);
@@ -124,7 +127,7 @@ class GridContainer extends HTMLElement {
         const cell = e.detail.cell;
 
         this.grid.cols[col].delete(cell);
-      },
+      }
     };
   }
 

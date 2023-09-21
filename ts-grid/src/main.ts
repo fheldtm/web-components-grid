@@ -2,7 +2,7 @@ import './style.css'
 import './assets/grid';
 import { GridElement } from './assets/grid/grid';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/`
 <div class="box">
   <div class="wrap">
     <grid-container>
@@ -21,7 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <grid-row>
         <grid-cell>BODY5</grid-cell>
         <grid-cell>BODY6</grid-cell>
-        <grid-cell>BODY7</grid-cell>
+        <grid-cell><input type="text" /></grid-cell>
         <grid-cell>BODY8</grid-cell>
       </grid-row>
     </grid-container>
@@ -33,7 +33,7 @@ setTimeout(() => {
   const container = document.querySelector('grid-container') as GridElement;
   container.on = {
     'grid-row-click': (e: CustomEvent) => {
-      // console.log('ROW');
+      console.log('ROW');
       // console.log(e);
     },
     'grid-cell-click': (e: CustomEvent) => {
@@ -46,16 +46,12 @@ setTimeout(() => {
     }
   }
 
-  const row = container.querySelector('grid-row');
-  container.removeChild(row!);
-  setTimeout(() => {
-    const newRow = document.createElement('grid-row');
-    newRow.innerHTML = `
-      <grid-cell>BODY9</grid-cell>
-      <grid-cell>BODY10</grid-cell>
-      <grid-cell>BODY11LONGTEXTTESTTESTTEST</grid-cell>
-      <grid-cell>BODY12</grid-cell>
-    `;
-    container.appendChild(newRow);
-  }, 2000);
+  // const newRow = document.createElement('grid-row');
+  // newRow.innerHTML = `
+  //   <grid-cell>BODY9</grid-cell>
+  //   <grid-cell>BODY10</grid-cell>
+  //   <grid-cell>BODY11LONGTEXTTESTTESTTEST</grid-cell>
+  //   <grid-cell>BODY12</grid-cell>
+  // `;
+  // container.appendChild(newRow);
 }, 1000);

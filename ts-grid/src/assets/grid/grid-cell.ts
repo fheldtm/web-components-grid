@@ -1,4 +1,4 @@
-import { GridCellProperty } from "./grid";
+import type { GridCellProperty } from './grid';
 
 const gridCellTemplate = document.createElement('template');
 gridCellTemplate.innerHTML = /* html */`
@@ -14,11 +14,12 @@ gridCellTemplate.innerHTML = /* html */`
   padding: var(--grid-cell-padding, 5px 10px);
   box-sizing: border-box;
   cursor: var(--grid-cell-cursor);
+  font-weight: var(--grid-cell-font-weight, normal);
+  overflow: hidden;
 }
 :host div {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
 }
 :host span {
   position: absolute;
@@ -68,7 +69,7 @@ class GridCell extends HTMLElement {
     handleMouseMove: () => {},
     handleMouseUp: () => {},
     gridCellClick: () => {},
-    gridColumnHeadClick: () => {},
+    gridColumnHeadClick: () => {}
   };
 
   constructor() {
@@ -159,7 +160,7 @@ class GridCell extends HTMLElement {
       gridColumnHeadClick: (e: MouseEvent) => {
         this.dispatchEvent(columnHeadClickEvent);
       }
-    }
+    };
   }
 
   async connectedCallback() {

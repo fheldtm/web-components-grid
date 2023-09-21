@@ -41,4 +41,4 @@ export type GridEventType = 'grid-row-click' | 'grid-cell-click' | 'grid-column-
 
 export interface GridElement extends HTMLElement {
   on: { [key in GridEventType]?: Function; }
-};
+}

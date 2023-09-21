@@ -1,4 +1,4 @@
-import { GridHeadProperty } from "./grid";
+import type { GridHeadProperty } from './grid';
 
 const gridHeadTemplate = document.createElement('template');
 gridHeadTemplate.innerHTML = /* html */`
@@ -27,7 +27,7 @@ gridHeadTemplate.innerHTML = /* html */`
 class GridHead extends HTMLElement {
   grid: GridHeadProperty = {
     gridHeadCheck: () => {}
-  }
+  };
 
   constructor() {
     super();
@@ -39,7 +39,7 @@ class GridHead extends HTMLElement {
       gridHeadCheck: (e: CustomEvent) => {
         e.detail.check(true);
       }
-    }
+    };
   }
 
   connectedCallback() {
