@@ -45,12 +45,17 @@ setTimeout(() => {
       // console.log(e);
     }
   }
-  const newRow = document.createElement('grid-row');
-  newRow.innerHTML = `
-    <grid-cell>BODY9</grid-cell>
-    <grid-cell>BODY10</grid-cell>
-    <grid-cell>BODY11LONGTEXTTESTTESTTEST</grid-cell>
-    <grid-cell>BODY12</grid-cell>
-  `;
-  container.appendChild(newRow);
+
+  const row = container.querySelector('grid-row');
+  container.removeChild(row!);
+  setTimeout(() => {
+    const newRow = document.createElement('grid-row');
+    newRow.innerHTML = `
+      <grid-cell>BODY9</grid-cell>
+      <grid-cell>BODY10</grid-cell>
+      <grid-cell>BODY11LONGTEXTTESTTESTTEST</grid-cell>
+      <grid-cell>BODY12</grid-cell>
+    `;
+    container.appendChild(newRow);
+  }, 2000);
 }, 1000);

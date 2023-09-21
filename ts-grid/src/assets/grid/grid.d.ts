@@ -6,6 +6,8 @@ export interface GridContainerProperty {
   getCellWidth: (position: number, width: number, resize: boolean = false) => void;
   setGridColumnSize: (e: CustomEvent) => void;
   setGridCellDraggable: (e: CustomEvent) => void;
+  connectCell: (e: CustomEvent) => void;
+  disconnectCell: (e: CustomEvent) => void;
 }
 
 export interface GridHeadProperty {
@@ -24,6 +26,7 @@ export interface GridCellProperty {
   startWidth: number;
   resizeEvent: CustomEvent | null;
   col: number;
+  container: HTMLElement | null;
   getColPosition: () => void;
   resizeCell: (width: number, resize: boolean = false) => CustomEvent;
   setDraggable: (draggable: boolean) => CustomEvent;

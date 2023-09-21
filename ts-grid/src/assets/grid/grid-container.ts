@@ -45,6 +45,8 @@ class GridContainer extends HTMLElement {
     getCellWidth: () => {},
     setGridColumnSize: () => {},
     setGridCellDraggable: () => {},
+    connectCell: () => {},
+    disconnectCell: () => {}
   };
   gridEvents: { [key in GridEventType]?: EventListener } = {};
 
@@ -60,6 +62,17 @@ class GridContainer extends HTMLElement {
       cols: [],
       handleSlotChange: (e: Event) => {
         if (!this.initialized) {
+          this.grid.colWidths = this.grid.cols.map(col => {
+            const widths = [...col].map(cell => {
+              const width = cell.shadowRoot?.querySelector('.grid-cell__content')?.clientWidth;
+              const computedStyle = getComputedStyle(cell);
+              const paddingLeft = parseInt(computedStyle.paddingLeft || '0');
+              const paddingRight = parseInt(computedStyle.paddingRight || '0');
+              return (width ? width : 0) + paddingLeft + paddingRight;
+            });
+            return Math.max(...widths);
+          });
+
           const maxColWidth = this.grid.colWidths.reduce((a, b) => a + b, 0);
           const widthRatio = this.grid.colWidths.map(width => width / maxColWidth);
 
@@ -76,32 +89,15 @@ class GridContainer extends HTMLElement {
 
         this.initialized = true;
       },
-      /**
-       * TODO : get Cell width 함수인데 많은 기능이 들어가 있음. 분리 필요
-       * 현재 들어가 있는 기능
-       * - resize 여부에 따라 현재 컬럼의 너비보다 작을 경우 너비를 변경하지 않음
-       * - 컬럼의 최소 너비는 50px
-       * 
-       * - 변경 될 부분 : 현재 컬럼의 길이를 return 하도록
-       * - 분리 될 기능 : 최소 너비, resize 여부에 따른 너비 변경
-       */
-      getCellWidth: (position: number, width: number, resize: boolean = false) => {
-        if (resize) {
-          const currentColumnWidth = this.grid.colWidths[position];
-          if (currentColumnWidth && width < currentColumnWidth) { // 현재 컬럼의 너비보다 작을 경우
-            return;
-          }
-        }
-
+      getCellWidth: (position: number, width: number) => {
         this.grid.colWidths[position] = Math.max(50, width);
       },
       setGridColumnSize: (e: CustomEvent) => {
         const col = e.detail.col;
         const width = e.detail.width;
         const cell = e.detail.cell;
-        const resize = e.detail.resize;
 
-        this.grid.getCellWidth(col, width, resize);
+        this.grid.getCellWidth(col, width);
 
         if (!this.grid.cols[col]) this.grid.cols[col] = new Set();
         this.grid.cols[col].add(cell);
@@ -113,20 +109,39 @@ class GridContainer extends HTMLElement {
       },
       setGridCellDraggable: (e: CustomEvent) => {
         this.style.userSelect = e.detail.draggable ? '' : 'none';
-      }
+      },
+      connectCell: (e: CustomEvent) => {
+        const cell = e.detail.cell;
+        const col = e.detail.col;
+
+        if (!this.grid.cols[col]) this.grid.cols[col] = new Set();
+        this.grid.cols[col].add(cell);
+
+        cell.style.width = `${this.grid.colWidths[col]}px`;
+      },
+      disconnectCell: (e: CustomEvent) => {
+        const col = e.detail.col;
+        const cell = e.detail.cell;
+
+        this.grid.cols[col].delete(cell);
+      },
     };
   }
 
   connectedCallback() {
-    (this.shadowRoot as ShadowRoot)?.querySelector('slot')?.addEventListener('slotchange', this.grid.handleSlotChange);
+    this.shadowRoot!.querySelector('slot')?.addEventListener('slotchange', this.grid.handleSlotChange);
     this.addEventListener(('grid-cell-resize' as any), this.grid.setGridColumnSize);
     this.addEventListener(('grid-cell-draggable' as any), this.grid.setGridCellDraggable);
+    this.addEventListener(('grid-cell-connect' as any), this.grid.connectCell);
+    this.addEventListener(('grid-cell-disconnect' as any), this.grid.disconnectCell);
   }
 
   disconnectedCallback() {
-    (this.shadowRoot as ShadowRoot)?.querySelector('slot')?.removeEventListener('slotchange', this.grid.handleSlotChange);
+    this.shadowRoot!.querySelector('slot')?.removeEventListener('slotchange', this.grid.handleSlotChange);
     this.removeEventListener(('grid-cell-resize' as any), this.grid.setGridColumnSize);
     this.removeEventListener(('grid-cell-draggable' as any), this.grid.setGridCellDraggable);
+    this.removeEventListener(('grid-cell-connect' as any), this.grid.connectCell);
+    this.removeEventListener(('grid-cell-disconnect' as any), this.grid.disconnectCell);
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {

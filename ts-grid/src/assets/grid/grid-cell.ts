@@ -60,6 +60,7 @@ class GridCell extends HTMLElement {
     startWidth: 0,
     resizeEvent: null,
     col: 0,
+    container: null,
     getColPosition: () => {},
     resizeCell: () => new CustomEvent('grid-cell-resize'),
     setDraggable: () => new CustomEvent('grid-cell-draggable'),
@@ -67,7 +68,7 @@ class GridCell extends HTMLElement {
     handleMouseMove: () => {},
     handleMouseUp: () => {},
     gridCellClick: () => {},
-    gridColumnHeadClick: () => {}
+    gridColumnHeadClick: () => {},
   };
 
   constructor() {
@@ -99,6 +100,7 @@ class GridCell extends HTMLElement {
       startWidth: 0,
       resizeEvent: null,
       col: 0,
+      container: this.closest('grid-container'),
       getColPosition: () => {
         const parent = this.parentNode;
         if (parent) {
@@ -107,7 +109,7 @@ class GridCell extends HTMLElement {
           this.grid.col = position;
         }
       },
-      resizeCell: (width: number, resize: boolean = false) => {
+      resizeCell: (width: number) => {
         this.grid.resizeEvent = null; // 메모리 누수 방지
         this.grid.resizeEvent = new CustomEvent('grid-cell-resize', {
           bubbles: true,
@@ -115,8 +117,7 @@ class GridCell extends HTMLElement {
           detail: {
             col: this.grid.col,
             width: width,
-            cell: this,
-            resize: resize
+            cell: this
           }
         });
         return this.grid.resizeEvent;
@@ -188,12 +189,23 @@ class GridCell extends HTMLElement {
     });
 
     // set the initial width
-    const width = this.clientWidth + 1;
     this.grid.getColPosition();
-    this.dispatchEvent(this.grid.resizeCell(width, true));
+    const cellConnectEvent = new CustomEvent('grid-cell-connect', {
+      bubbles: true,
+      composed: true,
+      detail: { col: this.grid.col, cell: this }
+    });
+    this.dispatchEvent(cellConnectEvent);
   }
 
   disconnectedCallback() {
+    const cellDisconnectEvent = new CustomEvent('grid-cell-disconnect', {
+      bubbles: true,
+      composed: true,
+      detail: { col: this.grid.col, cell: this }
+    });
+    this.grid.container?.dispatchEvent(cellDisconnectEvent);
+    
     this.removeEventListener('click', this.grid.gridColumnHeadClick);
     this.removeEventListener('click', this.grid.gridCellClick);
   }
